@@ -4,6 +4,14 @@ using UnityEngine;
 using TMPro;
 using UnityEngine.SceneManagement;
 
+public enum Difficulty
+{
+    Easy,
+    Medium,
+    Hard,
+    UltraMode
+}
+
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
@@ -19,7 +27,13 @@ public class GameManager : MonoBehaviour
 
     private int score = 0;
     private int spawnCount = 0;
-    private List<int> spawnThresholds = new List<int> { 1, 3, 5, 7 };
+    private Difficulty currentDifficulty;
+
+    public float minSpawnInterval = 8f;
+    public float maxSpawnInterval = 10f;
+    public float moveSpeed = 4f;
+
+    private List<int> spawnThresholds = new List<int> { 6, 16, 21, 51 };
     public List<PlayerShapes> players = new List<PlayerShapes>();
     private HashSet<int> triggeredThresholds = new HashSet<int>();
     private Vector3 lastSpawnerPosition = Vector3.zero;
@@ -32,10 +46,59 @@ public class GameManager : MonoBehaviour
             Destroy(gameObject);
     }
 
+    public void SetDifficulty(Difficulty difficulty)
+    {
+        currentDifficulty = difficulty;
+
+        switch (difficulty)
+        {
+            case Difficulty.Easy:
+                minSpawnInterval = 8f;
+                maxSpawnInterval = 10f;
+                moveSpeed = 4f;
+                break;
+            case Difficulty.Medium:
+                minSpawnInterval = 6f;
+                maxSpawnInterval = 10f;
+                moveSpeed = 5f;
+                break;
+            case Difficulty.Hard:
+                minSpawnInterval = 4f;
+                maxSpawnInterval = 8f;
+                moveSpeed = 6f;
+                break;
+            case Difficulty.UltraMode:
+                minSpawnInterval = 3f;
+                maxSpawnInterval = 6f;
+                moveSpeed = 7f;
+                break;
+        }
+
+        UpdateSpawnerProperties();
+    }
+
+    private void UpdateSpawnerProperties()
+    {
+        ShapeSpawner spawner = spawnerPrefab.GetComponent<ShapeSpawner>();
+        if (spawner != null)
+        {
+            spawner.minSpawnInterval = minSpawnInterval;
+            spawner.maxSpawnInterval = maxSpawnInterval;
+            spawner.moveSpeed = moveSpeed;
+        }
+    }
+
     private void Start()
     {
-        UpdateScoreUI();
         gameOverCanvas.SetActive(false);
+    }
+
+    public void StartGame()
+    {
+        score = 0;
+        spawnCount = 0;
+        triggeredThresholds.Clear();
+        UpdateScoreUI();
         SpawnNewSpawnerAndPlayer(isFirstSpawn: true);
     }
 
@@ -59,7 +122,6 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            Debug.Log("Game Over! Boohoo... Wrong Shapeeee!!!.");
             EndGame();
         }
 
@@ -115,24 +177,13 @@ public class GameManager : MonoBehaviour
         else
         {
             float xOffset = 0;
-
             switch (spawnCount)
             {
-                case 1:
-                    xOffset = 2.5f;
-                    break;
-                case 2:
-                    xOffset = -2.5f;
-                    break;
-                case 3:
-                    xOffset = 5f;
-                    break;
-                case 4:
-                    xOffset = -5f;
-                    break;
-                default:
-                    xOffset = 0;
-                    break;
+                case 1: xOffset = 2.5f; break;
+                case 2: xOffset = -2.5f; break;
+                case 3: xOffset = 5f; break;
+                case 4: xOffset = -5f; break;
+                default: xOffset = 0; break;
             }
 
             spawnerPosition = new Vector3(0 + xOffset, 0, 15);
@@ -143,9 +194,7 @@ public class GameManager : MonoBehaviour
         PlayerShapes newPlayer = Instantiate(playerShapePrefab, playerPosition, Quaternion.identity, spawnArea);
 
         newSpawner.player = newPlayer.transform;
-
         players.Add(newPlayer);
-
         spawnCount++;
     }
 }
