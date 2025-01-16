@@ -23,7 +23,18 @@ public class ShapeMover : MonoBehaviour
 
             if (Vector3.Distance(transform.position, target.position) < 0.5f)
             {
-                GameManager.Instance.CheckShapeMatch(shapeName);
+                PlayerShapes player = target.GetComponent<PlayerShapes>();
+
+                if (player != null && player.GetCurrentShapeName() == shapeName)
+                {
+                    GameManager.Instance.CheckShapeMatch(shapeName);
+                }
+                else
+                {
+                    Debug.Log("Game Over! Boohoo... Wrong Shapeeee!!!.");
+                    GameManager.Instance.EndGame();
+                }
+
                 Destroy(gameObject);
             }
         }

@@ -13,16 +13,6 @@ public class PlayerShapes : MonoBehaviour
         ChangeShape(0);
     }
 
-    public void OnLeftButtonPressed()
-    {
-        ChangeShape((currentShapeIndex - 1 + shapes.Length) % shapes.Length);
-    }
-
-    public void OnRightButtonPressed()
-    {
-        ChangeShape((currentShapeIndex + 1) % shapes.Length);
-    }
-
     void ChangeShape(int newShapeIndex)
     {
         if (currentShape != null)
@@ -35,5 +25,10 @@ public class PlayerShapes : MonoBehaviour
     public string GetCurrentShapeName()
     {
         return shapes[currentShapeIndex].name;
+    }
+
+    private void OnMouseDown()
+    {
+        ChangeShape((currentShapeIndex + 1) % shapes.Length);
     }
 }

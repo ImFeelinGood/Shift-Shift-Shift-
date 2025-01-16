@@ -7,12 +7,19 @@ public class ShapeSpawner : MonoBehaviour
     public GameObject[] shapes;
     public Transform spawnPoint;
     public Transform player;
-    public float spawnInterval = 2f;
+    public float minSpawnInterval = 6f;
+    public float maxSpawnInterval = 10f;
     public float moveSpeed = 5f;
 
     private void Start()
     {
-        InvokeRepeating(nameof(SpawnShape), spawnInterval, spawnInterval);
+        SetNextSpawn();
+    }
+
+    void SetNextSpawn()
+    {
+        float randomInterval = Random.Range(minSpawnInterval, maxSpawnInterval);
+        Invoke(nameof(SpawnShape), randomInterval);
     }
 
     void SpawnShape()
@@ -22,5 +29,7 @@ public class ShapeSpawner : MonoBehaviour
 
         ShapeMover mover = shape.AddComponent<ShapeMover>();
         mover.Initialize(player, moveSpeed, shapes[randomIndex].name);
+
+        SetNextSpawn();
     }
 }
