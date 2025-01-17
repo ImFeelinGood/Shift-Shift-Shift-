@@ -27,6 +27,12 @@ public class ShapeSpawner : MonoBehaviour
         int randomIndex = Random.Range(0, shapes.Length);
         GameObject shape = Instantiate(shapes[randomIndex], spawnPoint.position, Quaternion.identity);
 
+        ShapeBehavior shapeBehavior = shape.GetComponent<ShapeBehavior>();
+        if (shapeBehavior != null)
+        {
+            shapeBehavior.Initialize(false);
+        }
+
         ShapeMover mover = shape.AddComponent<ShapeMover>();
         mover.Initialize(player, moveSpeed, shapes[randomIndex].name);
 

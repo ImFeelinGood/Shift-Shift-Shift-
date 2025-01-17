@@ -18,6 +18,7 @@ public class PlayerShapes : MonoBehaviour
     private Vector3 originalScale;
     private bool canChangeShape = true;
 
+
     void Start()
     {
         originalPosition = transform.position;
@@ -37,6 +38,12 @@ public class PlayerShapes : MonoBehaviour
 
         currentShapeIndex = newShapeIndex;
         currentShape = Instantiate(shapes[currentShapeIndex], transform.position, Quaternion.identity, transform);
+
+        ShapeBehavior shapeBehavior = currentShape.GetComponent<ShapeBehavior>();
+        if (shapeBehavior != null)
+        {
+            shapeBehavior.Initialize(true);
+        }
 
         spinCoroutine = StartCoroutine(SpinBounceAndScaleShape());
         StartCoroutine(ShapeChangeCooldown());

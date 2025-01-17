@@ -41,7 +41,6 @@ public class GameManager : MonoBehaviour
     private List<int> spawnThresholds = new List<int> { 6, 16, 21, 51 };
     public List<PlayerShapes> players = new List<PlayerShapes>();
     private HashSet<int> triggeredThresholds = new HashSet<int>();
-    private Vector3 lastSpawnerPosition = Vector3.zero;
 
     private void Awake()
     {
@@ -178,7 +177,7 @@ public class GameManager : MonoBehaviour
 
         if (isFirstSpawn)
         {
-            spawnerPosition = new Vector3(0, 0, 15);
+            spawnerPosition = new Vector3(0, 0, 25);
             playerPosition = new Vector3(0, 0, -5);
         }
         else
@@ -193,7 +192,7 @@ public class GameManager : MonoBehaviour
                 default: xOffset = 0; break;
             }
 
-            spawnerPosition = new Vector3(0 + xOffset, 0, 15);
+            spawnerPosition = new Vector3(0 + xOffset, 0, 25);
             playerPosition = new Vector3(0 + xOffset, 0, -5);
         }
 
