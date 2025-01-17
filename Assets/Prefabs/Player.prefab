@@ -48,6 +48,11 @@ MonoBehaviour:
   shapes:
   - {fileID: 6088468158530085666, guid: df03043ba12a07f4dbb8c63a0606eff9, type: 3}
   - {fileID: 6088468158530085666, guid: cd16704c6d1a79c47891ffee23457403, type: 3}
+  - {fileID: 6088468158530085666, guid: 488f8539face9eb4f8c190207e4bb88f, type: 3}
+  animationDuration: 0.5
+  spinAngle: 360
+  bounceHeight: 0.5
+  maxScaleMultiplier: 1.75
 --- !u!65 &8314148275317485671
 BoxCollider:
   m_ObjectHideFlags: 0

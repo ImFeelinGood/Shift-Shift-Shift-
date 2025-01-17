@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using UnityEngine.SceneManagement;
+using Cinemachine;
+using System;
 
 public enum Difficulty
 {
@@ -19,6 +21,9 @@ public class GameManager : MonoBehaviour
     public PlayerShapes playerShapePrefab;
     public ShapeSpawner spawnerPrefab;
     public Transform spawnArea;
+    public Transform cameraTarget;
+    private CinemachineVirtualCamera virtualCamera;
+    private CinemachineTransposer transposer;
 
     public TextMeshProUGUI scoreText;
     public GameObject gameOverCanvas;
@@ -91,6 +96,8 @@ public class GameManager : MonoBehaviour
     private void Start()
     {
         gameOverCanvas.SetActive(false);
+        virtualCamera = GetComponentInChildren<CinemachineVirtualCamera>();
+        transposer = virtualCamera.GetCinemachineComponent<CinemachineTransposer>();
     }
 
     public void StartGame()
@@ -196,5 +203,34 @@ public class GameManager : MonoBehaviour
         newSpawner.player = newPlayer.transform;
         players.Add(newPlayer);
         spawnCount++;
+
+        UpdateCameraTargetPosition();
+    }
+
+    private void UpdateCameraTargetPosition()
+    {
+        if (players.Count == 0) return;
+
+        Vector3 center = Vector3.zero;
+        foreach (var player in players)
+        {
+            center += player.transform.position;
+        }
+        center /= players.Count;
+
+        if (players.Count == 1)
+        {
+            cameraTarget.position = new Vector3(center.x, 0, 1);
+        }
+        else
+        {
+            cameraTarget.position = new Vector3(center.x, 0, -players.Count + 1.5f);
+        }
+
+        float targetYPosition = players.Count + 5f;
+        float smoothSpeed = 5f;
+        float newYPosition = Mathf.Lerp(transposer.m_FollowOffset.y, targetYPosition, Time.deltaTime * smoothSpeed);
+
+        transposer.m_FollowOffset = new Vector3(transposer.m_FollowOffset.x, newYPosition, transposer.m_FollowOffset.z);
     }
 }
