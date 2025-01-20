@@ -18,22 +18,30 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
 
+    [Header("Game Settings")]
     public PlayerShapes playerShapePrefab;
     public ShapeSpawner spawnerPrefab;
     public Transform spawnArea;
     public Transform cameraTarget;
     private CinemachineVirtualCamera virtualCamera;
     private CinemachineTransposer transposer;
+    private int score = 0;
+    private int spawnCount = 0;
 
+    [Header("UI Settings")]
     public TextMeshProUGUI scoreText;
     public GameObject gameOverCanvas;
     public TextMeshProUGUI currentScoreText;
     public TextMeshProUGUI highScoreText;
 
-    private int score = 0;
-    private int spawnCount = 0;
-    private Difficulty currentDifficulty;
+    [Header("Audio Settings")]
+    public AudioClip scoreSound;
+    public AudioClip spawnSound;
+    public AudioClip gameoverSound;
+    private AudioSource audioSource;
 
+    [Header("Difficulty Settings")]
+    private Difficulty currentDifficulty;
     public float minSpawnInterval = 8f;
     public float maxSpawnInterval = 10f;
     public float moveSpeed = 4f;
@@ -48,6 +56,12 @@ public class GameManager : MonoBehaviour
             Instance = this;
         else
             Destroy(gameObject);
+
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+        }
     }
 
     public void SetDifficulty(Difficulty difficulty)
@@ -107,6 +121,13 @@ public class GameManager : MonoBehaviour
         UpdateScoreUI();
         SpawnNewSpawnerAndPlayer(isFirstSpawn: true);
     }
+    private void PlaySound(AudioClip clip)
+    {
+        if (clip != null && audioSource != null)
+        {
+            audioSource.PlayOneShot(clip);
+        }
+    }
 
     public void CheckShapeMatch(string incomingShape)
     {
@@ -123,6 +144,7 @@ public class GameManager : MonoBehaviour
 
         if (currentPlayer != null)
         {
+            PlaySound(scoreSound);
             score++;
             CheckAndSpawnNewElements();
         }
@@ -151,7 +173,13 @@ public class GameManager : MonoBehaviour
         currentScoreText.text = "Current Score: " + score;
         highScoreText.text = "High Score: " + highScore;
 
+        foreach (var player in players)
+        {
+            player.isGameOver = true;
+        }
+
         Time.timeScale = 0f;
+        PlaySound(gameoverSound);
         gameOverCanvas.SetActive(true);
     }
 
@@ -203,6 +231,7 @@ public class GameManager : MonoBehaviour
         players.Add(newPlayer);
         spawnCount++;
 
+        PlaySound(spawnSound);
         UpdateCameraTargetPosition();
     }
 

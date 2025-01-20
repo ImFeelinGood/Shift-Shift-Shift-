@@ -9,15 +9,21 @@ public class PlayerShapes : MonoBehaviour
     private GameObject currentShape;
     private Coroutine spinCoroutine;
 
+    private Vector3 originalPosition;
+    private Vector3 originalScale;
+    private bool canChangeShape = true;
+
+    public bool isGameOver = false;
+
+    [Header("Animation Settings")]
     [SerializeField] private float animationDuration = 0.5f;
     [SerializeField] private float spinAngle = 360f;
     [SerializeField] private float bounceHeight = 0.2f;
     [SerializeField] private float maxScaleMultiplier = 1.2f;
 
-    private Vector3 originalPosition;
-    private Vector3 originalScale;
-    private bool canChangeShape = true;
-
+    [Header("Audio Settings")]
+    public AudioSource audioSource;
+    public AudioClip[] changeShapeSounds;
 
     void Start()
     {
@@ -28,7 +34,7 @@ public class PlayerShapes : MonoBehaviour
 
     void ChangeShape(int newShapeIndex)
     {
-        if (!canChangeShape) return;
+        if (!canChangeShape || isGameOver) return;
 
         if (spinCoroutine != null)
             StopCoroutine(spinCoroutine);
@@ -45,6 +51,7 @@ public class PlayerShapes : MonoBehaviour
             shapeBehavior.Initialize(true);
         }
 
+        PlayRandomSound();
         spinCoroutine = StartCoroutine(SpinBounceAndScaleShape());
         StartCoroutine(ShapeChangeCooldown());
     }
@@ -56,7 +63,10 @@ public class PlayerShapes : MonoBehaviour
 
     private void OnMouseDown()
     {
-        ChangeShape((currentShapeIndex + 1) % shapes.Length);
+        if (!isGameOver)
+        {
+            ChangeShape((currentShapeIndex + 1) % shapes.Length);
+        }
     }
 
     private IEnumerator SpinBounceAndScaleShape()
@@ -90,5 +100,13 @@ public class PlayerShapes : MonoBehaviour
         canChangeShape = false;
         yield return new WaitForSeconds(animationDuration);
         canChangeShape = true;
+    }
+    private void PlayRandomSound()
+    {
+        if (changeShapeSounds.Length > 0 && audioSource != null)
+        {
+            int randomIndex = Random.Range(0, changeShapeSounds.Length);
+            audioSource.PlayOneShot(changeShapeSounds[randomIndex]);
+        }
     }
 }
