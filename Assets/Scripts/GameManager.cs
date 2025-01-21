@@ -33,6 +33,7 @@ public class GameManager : MonoBehaviour
     public GameObject gameOverCanvas;
     public TextMeshProUGUI currentScoreText;
     public TextMeshProUGUI highScoreText;
+    public TextMeshProUGUI highScoreTextMenu;
 
     [Header("Audio Settings")]
     public AudioClip scoreSound;
@@ -46,7 +47,7 @@ public class GameManager : MonoBehaviour
     public float maxSpawnInterval = 10f;
     public float moveSpeed = 4f;
 
-    private List<int> spawnThresholds = new List<int> { 6, 16, 21, 51 };
+    private List<int> spawnThresholds = new List<int> { 1, 2, 3, 4 }; //Default value { 6, 16, 31, 51 }
     public List<PlayerShapes> players = new List<PlayerShapes>();
     private HashSet<int> triggeredThresholds = new HashSet<int>();
 
@@ -111,7 +112,11 @@ public class GameManager : MonoBehaviour
         gameOverCanvas.SetActive(false);
         virtualCamera = GetComponentInChildren<CinemachineVirtualCamera>();
         transposer = virtualCamera.GetCinemachineComponent<CinemachineTransposer>();
+
+        int highScore = PlayerPrefs.GetInt("HighScore", 0);
+        highScoreTextMenu.text = "High Score: " + highScore;
     }
+
 
     public void StartGame()
     {

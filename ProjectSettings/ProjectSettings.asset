@@ -163,6 +163,7 @@ PlayerSettings:
   androidMaxAspectRatio: 2.1
   applicationIdentifier:
     Android: com.DefaultCompany.ShiftShiftShift
+    Standalone: com.DefaultCompany.Shift-Shift-Shift-
   buildNumber:
     Standalone: 0
     VisionOS: 0

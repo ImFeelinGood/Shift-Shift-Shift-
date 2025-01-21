@@ -18,7 +18,7 @@ public class AudioSettings : MonoBehaviour
     private void Start()
     {
         
-        bgmSlider.value = PlayerPrefs.GetFloat(BGM, 0.75f); 
+        bgmSlider.value = PlayerPrefs.GetFloat(BGM, 0.50f); 
         sfxSlider.value = PlayerPrefs.GetFloat(SFX, 0.75f);
 
         
