@@ -5,8 +5,6 @@ using TMPro;
 using UnityEngine.SceneManagement;
 using Cinemachine;
 using System;
-using System.Linq;
-using System.IO;
 
 public enum Difficulty
 {
@@ -14,37 +12,6 @@ public enum Difficulty
     Medium,
     Hard,
     UltraMode
-}
-
-[System.Serializable]
-public class LeaderboardEntry
-{
-    public string PlayerName;
-    public int Score;
-    public Difficulty Difficulty;
-
-    public LeaderboardEntry(string playerName, int score, Difficulty difficulty)
-    {
-        PlayerName = playerName;
-        Score = score;
-        Difficulty = difficulty;
-    }
-}
-
-[System.Serializable]
-public class SerializableLeaderboard
-{
-    public List<LeaderboardEntry> Entries = new List<LeaderboardEntry>();
-
-    public SerializableLeaderboard(List<LeaderboardEntry> leaderboard)
-    {
-        Entries = leaderboard;
-    }
-
-    public List<LeaderboardEntry> ToList()
-    {
-        return Entries;
-    }
 }
 
 public class GameManager : MonoBehaviour
@@ -67,9 +34,6 @@ public class GameManager : MonoBehaviour
     public TextMeshProUGUI currentScoreText;
     public TextMeshProUGUI highScoreText;
     public TextMeshProUGUI highScoreTextMenu;
-    public TMP_InputField playerNameInputField;
-    public GameObject leaderboardRowPrefab;
-    public Transform leaderboardContent;
 
     [Header("Audio Settings")]
     public AudioClip scoreSound;
@@ -83,12 +47,9 @@ public class GameManager : MonoBehaviour
     public float maxSpawnInterval = 10f;
     public float moveSpeed = 4f;
 
-    private List<int> spawnThresholds = new List<int> { 6, 16, 31, 51 }; // default value { 6, 16, 31, 51 }
+    private List<int> spawnThresholds = new List<int> { 1, 2, 3, 4 }; //Default value { 6, 16, 31, 51 }
     public List<PlayerShapes> players = new List<PlayerShapes>();
     private HashSet<int> triggeredThresholds = new HashSet<int>();
-    private List<LeaderboardEntry> leaderboard = new List<LeaderboardEntry>();
-    private string playerName;
-    private const string LeaderboardKey = "LeaderboardData";
 
     private void Awake()
     {
@@ -97,7 +58,11 @@ public class GameManager : MonoBehaviour
         else
             Destroy(gameObject);
 
-        audioSource = GetComponent<AudioSource>() ?? gameObject.AddComponent<AudioSource>();
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+        }
     }
 
     public void SetDifficulty(Difficulty difficulty)
@@ -148,24 +113,19 @@ public class GameManager : MonoBehaviour
         virtualCamera = GetComponentInChildren<CinemachineVirtualCamera>();
         transposer = virtualCamera.GetCinemachineComponent<CinemachineTransposer>();
 
-        LoadLeaderboard();
-        DisplayLeaderboard();
-
-        int highScore = leaderboard.Count > 0 ? leaderboard.Max(entry => entry.Score) : 0;
+        int highScore = PlayerPrefs.GetInt("HighScore", 0);
         highScoreTextMenu.text = "High Score: " + highScore;
     }
 
+
     public void StartGame()
     {
-        playerName = string.IsNullOrWhiteSpace(playerNameInputField.text) ? "Player" : playerNameInputField.text;
-
         score = 0;
         spawnCount = 0;
         triggeredThresholds.Clear();
         UpdateScoreUI();
         SpawnNewSpawnerAndPlayer(isFirstSpawn: true);
     }
-
     private void PlaySound(AudioClip clip)
     {
         if (clip != null && audioSource != null)
@@ -176,7 +136,16 @@ public class GameManager : MonoBehaviour
 
     public void CheckShapeMatch(string incomingShape)
     {
-        PlayerShapes currentPlayer = players.FirstOrDefault(player => player.GetCurrentShapeName() == incomingShape);
+        PlayerShapes currentPlayer = null;
+
+        foreach (var player in players)
+        {
+            if (player.GetCurrentShapeName() == incomingShape)
+            {
+                currentPlayer = player;
+                break;
+            }
+        }
 
         if (currentPlayer != null)
         {
@@ -199,9 +168,12 @@ public class GameManager : MonoBehaviour
 
     public void EndGame()
     {
-        AddToLeaderboard(playerName, score, currentDifficulty);
-
-        int highScore = leaderboard.Count > 0 ? leaderboard.Max(entry => entry.Score) : 0;
+        int highScore = PlayerPrefs.GetInt("HighScore", 0);
+        if (score > highScore)
+        {
+            highScore = score;
+            PlayerPrefs.SetInt("HighScore", highScore);
+        }
 
         currentScoreText.text = "Current Score: " + score;
         highScoreText.text = "High Score: " + highScore;
@@ -214,7 +186,6 @@ public class GameManager : MonoBehaviour
         Time.timeScale = 0f;
         PlaySound(gameoverSound);
         gameOverCanvas.SetActive(true);
-        DisplayLeaderboard();
     }
 
     public void RestartGame()
@@ -273,74 +244,26 @@ public class GameManager : MonoBehaviour
     {
         if (players.Count == 0) return;
 
-        Vector3 center = players.Aggregate(Vector3.zero, (acc, player) => acc + player.transform.position) / players.Count;
+        Vector3 center = Vector3.zero;
+        foreach (var player in players)
+        {
+            center += player.transform.position;
+        }
+        center /= players.Count;
 
-        cameraTarget.position = new Vector3(center.x, 0, -players.Count + 1.5f);
+        if (players.Count == 1)
+        {
+            cameraTarget.position = new Vector3(center.x, 0, 1);
+        }
+        else
+        {
+            cameraTarget.position = new Vector3(center.x, 0, -players.Count + 1.5f);
+        }
 
         float targetYPosition = players.Count + 5f;
         float smoothSpeed = 5f;
-        transposer.m_FollowOffset = Vector3.Lerp(transposer.m_FollowOffset, new Vector3(transposer.m_FollowOffset.x, targetYPosition, transposer.m_FollowOffset.z), Time.deltaTime * smoothSpeed);
-    }
+        float newYPosition = Mathf.Lerp(transposer.m_FollowOffset.y, targetYPosition, Time.deltaTime * smoothSpeed);
 
-    private void AddToLeaderboard(string playerName, int score, Difficulty difficulty)
-    {
-        leaderboard.Add(new LeaderboardEntry(playerName, score, difficulty));
-        SaveLeaderboard();
-    }
-
-    private void DisplayLeaderboard()
-    {
-        foreach (Transform child in leaderboardContent)
-        {
-            Destroy(child.gameObject);
-        }
-
-        var sortedEntries = leaderboard.OrderByDescending(entry => entry.Score);
-
-        foreach (var entry in sortedEntries)
-        {
-            GameObject newRow = Instantiate(leaderboardRowPrefab, leaderboardContent);
-
-            TextMeshProUGUI[] texts = newRow.GetComponentsInChildren<TextMeshProUGUI>();
-            texts[0].text = entry.PlayerName;
-            texts[1].text = entry.Difficulty.ToString();
-            texts[2].text = entry.Score.ToString();
-        }
-    }
-
-    public void SortLeaderboardByScore()
-    {
-        leaderboard = leaderboard.OrderByDescending(entry => entry.Score).ToList();
-        DisplayLeaderboard();
-    }
-
-    public void SortLeaderboardByDifficulty()
-    {
-        leaderboard = leaderboard.OrderBy(entry => entry.Difficulty).ToList();
-        DisplayLeaderboard();
-    }
-
-    private void SaveLeaderboard()
-    {
-        string json = JsonUtility.ToJson(new SerializableLeaderboard(leaderboard));
-        PlayerPrefs.SetString(LeaderboardKey, json);
-        PlayerPrefs.Save();
-    }
-
-    private void LoadLeaderboard()
-    {
-        if (PlayerPrefs.HasKey(LeaderboardKey))
-        {
-            string json = PlayerPrefs.GetString(LeaderboardKey);
-            SerializableLeaderboard savedLeaderboard = JsonUtility.FromJson<SerializableLeaderboard>(json);
-            leaderboard = savedLeaderboard.ToList();
-        }
-    }
-
-    public void ClearLeaderboard()
-    {
-        PlayerPrefs.DeleteKey(LeaderboardKey);
-        leaderboard.Clear();
-        DisplayLeaderboard();
+        transposer.m_FollowOffset = new Vector3(transposer.m_FollowOffset.x, newYPosition, transposer.m_FollowOffset.z);
     }
 }
